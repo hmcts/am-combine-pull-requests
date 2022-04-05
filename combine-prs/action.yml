@@ -226,6 +226,10 @@ runs:
 
           const body = 'This PR was created by the Combine PRs action by combining the following PRs:\n' + prs.join('\n');
 
+          console.log('HEAD: ' + combineBranchName);
+          console.log('BASE: ' + '${{ steps.fetch-branch-names.outputs.base-branch }}');
+          console.log('BODY: ' + body);
+
           try {
             const response = await github.pulls.create({
               owner: context.repo.owner,
