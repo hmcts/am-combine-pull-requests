@@ -233,7 +233,7 @@ runs:
           console.log('REPO: ' + context.repo.repo);
 
           try {
-            /*
+            
             const response = await github.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -242,7 +242,6 @@ runs:
               base: '${{ steps.fetch-branch-names.outputs.base-branch }}',
               body: body
             });
-            */
 
             console.log('PULL REQUEST SUCCESSFULLY CREATED FOR BRANCH ' + combineBranchName);
 
@@ -283,11 +282,17 @@ runs:
               console.log('LABEL ' + autoMergeConflictLabel + ' EXISTS');
             }
           } catch(getLabelError) {
-            if (getLabelError.status == 404) {
-              createAutoMergeLabel = true;
+            createAutoMergeLabel = true;
+            console.log('FAILED TO GET LABEL ' + autoMergeConflictLabel + ' DUE TO ' + getLabelError.message);
 
+            /*
+            if (getLabelError.status == 404) {
               console.log('FAILED TO GET LABEL ' + autoMergeConflictLabel + ' DUE TO ' + getLabelError.message);
             }
+            else {
+              console.log('FAILED TO GET LABEL ' + autoMergeConflictLabel + ' DUE TO ' + getLabelError.message);
+            }
+            */
           }
 
           if (createAutoMergeLabel == true) {
