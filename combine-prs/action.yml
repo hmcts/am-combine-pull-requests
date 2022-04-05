@@ -231,6 +231,7 @@ runs:
           console.log('BODY: ' + body);
 
           try {
+            /*
             const response = await github.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -239,6 +240,7 @@ runs:
               base: '${{ steps.fetch-branch-names.outputs.base-branch }}',
               body: body
             });
+            */
 
             console.log('PULL REQUEST SUCCESSFULLY CREATED FOR BRANCH ' + combineBranchName);
 
