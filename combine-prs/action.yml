@@ -198,7 +198,7 @@ runs:
         git push origin $COMBINE_BRANCH_NAME
 
     # Creates a PR with the new combined branch
-    - uses: actions/github-script@v6
+    - uses: actions/github-script@v3
       # if: ${{ false }}
       name: Create Combined Pull Request
       env:
@@ -256,7 +256,7 @@ runs:
               }
           }
 
-    - uses: actions/github-script@v6
+    - uses: actions/github-script@v3
       # if: ${{ false }}
       id: label-conflict-prs
       name: Add Label To Merge Conflict Pull Requests
