@@ -42,6 +42,11 @@ runs:
         echo "COMBINE_BRANCH_NAME=${{ inputs.combineBranchName || env.DEFAULT_COMBINE_BRANCH_NAME }}" >> $GITHUB_ENV
         echo "IGNORE_LABEL=${{ inputs.ignoreLabel || env.DEFAULT_IGNORE_LABEL }}" >> $GITHUB_ENV
 
+    - uses: actions/checkout@v2.4.0
+      name: Checkout
+      with:
+        fetch-depth: 0
+
     - uses: actions/github-script@v6
       id: fetch-branch-names
       name: Fetch Branch Names
@@ -123,12 +128,6 @@ runs:
           console.log('IDENTIFIED BRANCHES: ' + combined);
 
           return combined;
-
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2.4.0
-      name: Checkout
-      with:
-        fetch-depth: 0
 
     # Creates a branch with other PR branches merged together
     - name: Created Combined Branch
