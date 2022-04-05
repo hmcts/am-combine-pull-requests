@@ -3,25 +3,35 @@ description: "Combines Multiple Pull Requests"
 
 inputs:
   branchPrefix:
-    description: 'Branch prefix to find pull requests based on prefix'
+    description: "Branch prefix to find pull requests based on prefix"
     required: true
-    default: 'dependabot'
+    default: "dependabot"
+
   mustBeGreen:
-    description: 'Only combine pull requests that are green (status is success)'
+    description: "Only combine pull requests that are green (status is success)"
     required: true
-    default: 'true'
+    default: "true"
+
   combineBranchName:
-    description: 'Name of the branch to combine pull requests into'
+    description: "Name of the branch to combine pull requests into"
     required: true
-    default: 'combine-prs-branch'
+    default: "combine-prs-branch"
+
   ignoreLabel:
-    description: 'Exclude pull requests with this label'
+    description: "Exclude pull requests with this label"
     required: true
-    default: 'nocombine'
+    default: "nocombine"
+
+  combinePullRequestTitle:
+    description: "Title of the combined pull request"
+    required: false
+    default: "Combined Pull Request"
+
   closeCombinedPrs:
-    description: 'Close the pull requests that are successfully combined'
+    description: "Close the pull requests that are successfully combined"
     required: true
-    default: 'true'
+    default: "true"
+
   githubToken:
     description: "Github Token"
     required: true
@@ -29,6 +39,7 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # Assign default environment variables
     - name: Assign Environment Variables
       shell: bash
       env:
@@ -36,23 +47,31 @@ runs:
         DEFAULT_MUST_BE_GREEN: 'true'
         DEFAULT_COMBINE_BRANCH_NAME: 'combine-prs-branch'
         DEFAULT_IGNORE_LABEL: 'nocombine'
+        DEFAULT_COMBINE_PR_TITLE: 'Combined Pull Request'
+        DEFAULT_CLOSE_COMBINED_PRS: 'true'
       run: |
         echo "BRANCH_PREFIX=${{ inputs.branchPrefix || env.DEFAULT_BRANCH_PREFIX }}" >> $GITHUB_ENV
         echo "MUST_BE_GREEN=${{ inputs.mustBeGreen || env.DEFAULT_MUST_BE_GREEN }}" >> $GITHUB_ENV
         echo "COMBINE_BRANCH_NAME=${{ inputs.combineBranchName || env.DEFAULT_COMBINE_BRANCH_NAME }}" >> $GITHUB_ENV
         echo "IGNORE_LABEL=${{ inputs.ignoreLabel || env.DEFAULT_IGNORE_LABEL }}" >> $GITHUB_ENV
+        echo "COMBINE_PR_TITLE=${{ inputs.combinePullRequestTitle || env.DEFAULT_COMBINE_PR_TITLE }}" >> $GITHUB_ENV
+        echo "CLOSE_COMBINED_PRS=${{ inputs.closeCombinedPrs || env.DEFAULT_CLOSE_COMBINED_PRS }}" >> $GITHUB_ENV
 
+    # Checkout source
     - uses: actions/checkout@v2.4.0
       name: Checkout
       with:
         fetch-depth: 0
 
+    # Fetch matching pull request branches
     - uses: actions/github-script@v6
       id: fetch-branch-names
       name: Fetch Branch Names
       with:
         github-token: ${{ inputs.githubToken }}
         script: |
+          console.log('START =========================================================================== STEP');
+
           const branchPrefix = process.env.BRANCH_PREFIX;
           const ignoreLabel = process.env.IGNORE_LABEL;
           const mustBeGreen = process.env.MUST_BE_GREEN;
@@ -127,6 +146,8 @@ runs:
           console.log('NUMBER OF IDENTIFIED BRANCHES: ' + branches.length);
           console.log('IDENTIFIED BRANCHES: ' + combined);
 
+          console.log('END =========================================================================== STEP');
+
           return combined;
 
     # Creates a branch with other PR branches merged together
@@ -136,6 +157,8 @@ runs:
         BASE_BRANCH: ${{ steps.fetch-branch-names.outputs.base-branch }}
         BRANCHES_TO_COMBINE: ${{ steps.fetch-branch-names.outputs.result }}
       run: |
+        echo "START =========================================================================== STEP"
+
         declare -a prNos
         declare -a prString
         declare -a conflictPrNos
@@ -197,6 +220,8 @@ runs:
 
         git push origin $COMBINE_BRANCH_NAME
 
+        echo "END =========================================================================== STEP"
+
     # Creates a PR with the new combined branch
     - uses: actions/github-script@v6
       # if: ${{ false }}
@@ -206,9 +231,12 @@ runs:
       with:
         github-token: ${{ inputs.githubToken }}
         script: |
+          console.log('STEP =========================================================================== STEP');
+
           prs = [];
           const closePrs = process.env.CLOSEPRS;
           const combineBranchName = process.env.COMBINE_BRANCH_NAME;
+          const combinePRTitle = process.env.COMBINE_PR_TITLE;
           const prString = process.env.PRS_STRING;
 
           prStringArr = prString.split("||");
@@ -226,18 +254,14 @@ runs:
 
           const body = 'This PR was created by the Combine PRs action by combining the following PRs:\n' + prs.join('\n');
 
-          console.log('HEAD: ' + combineBranchName);
-          console.log('BASE: ' + '${{ steps.fetch-branch-names.outputs.base-branch }}');
-          console.log('BODY: ' + body);
-          console.log('OWNER: ' + context.repo.owner);
-          console.log('REPO: ' + context.repo.repo);
+          console.log('CREATING COMBINED PULL REQUEST');
 
           try {
             
             const response = await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: 'Dependabot Combined PR',
+              title: combinePRTitle,
               head: combineBranchName,
               base: '${{ steps.fetch-branch-names.outputs.base-branch }}',
               body: body
@@ -245,7 +269,7 @@ runs:
 
             console.log('PULL REQUEST SUCCESSFULLY CREATED FOR BRANCH ' + combineBranchName);
 
-            console.log('PULL REQUEST TITLE: Dependabot Combined PR');
+            console.log('PULL REQUEST TITLE: ' + combinePRTitle);
             console.log('PULL REQUEST URL: ' + response['data']['html_url']);
 
           } catch (error) {
@@ -256,6 +280,8 @@ runs:
               }
           }
 
+          console.log('END =========================================================================== STEP');
+
     - uses: actions/github-script@v6
       # if: ${{ false }}
       id: label-conflict-prs
@@ -263,6 +289,8 @@ runs:
       with:
         github-token: ${{ inputs.githubToken }}
         script: |
+          console.log('STEP =========================================================================== STEP');
+
           const mergeConlictPrs = process.env.MERGECONFLICTPRS;
           const autoMergeConflictLabel = 'automergeconflict';
           let createAutoMergeLabel = false;
@@ -319,7 +347,7 @@ runs:
               console.log('ATTEMPTING TO ADD LABEL TO PULL REQUEST : ' + pr);
 
               try {
-                const response = await github.issues.addLabels({
+                const response = await github.rest.issues.addLabels({
                                 owner: context.repo.owner,
                                 repo: context.repo.repo,
                                 issue_number: pr,
@@ -338,42 +366,55 @@ runs:
             }
           }
 
+          console.log('END =========================================================================== STEP');
+
     - uses: actions/github-script@v6
-      if: ${{ false }}
+      # if: ${{ false }}
       id: close-merged-prs
       name: Close Merged Pull Requests
       with:
         github-token: ${{ inputs.githubToken }}
         script: |
-          // const closePrs = '2~3~'; // Use this for tests
+          console.log('STEP =========================================================================== STEP');
 
-          const closePrs = process.env.CLOSEPRS;
-          console.log('prsToClose: ' + closePrs);
+          const closeCombinedPrs = process.env.CLOSE_COMBINED_PRS;
 
-          const prArray = closePrs.split("~");
-          prArray.pop(); // Remove the last '~' character
+          if (closeCombinedPrs == 'true') {
+            // const closePrs = '2~3~'; // Use this for tests
 
-          for(const pr of prArray) {
-            console.log('--------------------------------------------------');
-            console.log('ATTEMPTING TO CLOSE PULL REQUEST : ' + pr);
+            const closePrs = process.env.CLOSEPRS;
+            console.log('prsToClose: ' + closePrs);
 
-            try {
-              const closePRStatus = await github.pulls.update({
-                                      owner: context.repo.owner,
-                                      repo: context.repo.repo,
-                                      pull_number: pr,
-                                      state: 'closed'
-                                    });
+            const prArray = closePrs.split("~");
+            prArray.pop(); // Remove the last '~' character
 
-              // console.log('JSON.stringify: ' + JSON.stringify(closePRStatus));
-              console.log('STATUS CODE: ' + closePRStatus['status']);
+            for(const pr of prArray) {
+              console.log('--------------------------------------------------');
+              console.log('ATTEMPTING TO CLOSE PULL REQUEST : ' + pr);
 
-              if (closePRStatus['status'] == '200') {
-                console.log('PULL REQUEST ' + pr + ' CLOSED SUCCESSFULLY.');
-              } else {
-                console.log('PULL REQUEST ' + pr + ' COULD NOT BE CLOSED.');
+              try {
+                const closePRStatus = await github.pulls.update({
+                                        owner: context.repo.owner,
+                                        repo: context.repo.repo,
+                                        pull_number: pr,
+                                        state: 'closed'
+                                      });
+
+                // console.log('JSON.stringify: ' + JSON.stringify(closePRStatus));
+                console.log('STATUS CODE: ' + closePRStatus['status']);
+
+                if (closePRStatus['status'] == '200') {
+                  console.log('PULL REQUEST ' + pr + ' CLOSED SUCCESSFULLY.');
+                } else {
+                  console.log('PULL REQUEST ' + pr + ' COULD NOT BE CLOSED.');
+                }
+              } catch (error) {
+                console.log('PULL REQUEST ' + pr + ' COULD NOT BE CLOSED DUE TO: ' + error.message);
               }
-            } catch (error) {
-              console.log('PULL REQUEST ' + pr + ' COULD NOT BE CLOSED DUE TO: ' + error.message);
             }
           }
+          else {
+            console.log('CLOSE COMBINED PULL REQUESTS DISABLED.');
+          }
+
+          console.log('END =========================================================================== STEP');
