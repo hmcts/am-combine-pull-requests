@@ -245,7 +245,7 @@ runs:
             console.log('PULL REQUEST SUCCESSFULLY CREATED FOR BRANCH ' + combineBranchName);
 
             console.log('PULL REQUEST TITLE: Dependabot Combined PR');
-            console.log('PULL REQUEST URL: ' + response['data']['html_url']);
+            // console.log('PULL REQUEST URL: ' + response['data']['html_url']);
 
           } catch (error) {
               if (error.message.includes('A pull request already exists')) {
