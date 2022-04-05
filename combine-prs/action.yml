@@ -198,7 +198,7 @@ runs:
         git push origin $COMBINE_BRANCH_NAME
 
     # Creates a PR with the new combined branch
-    - uses: actions/github-script@v3
+    - uses: actions/github-script@v6
       # if: ${{ false }}
       name: Create Combined Pull Request
       env:
@@ -234,7 +234,7 @@ runs:
 
           try {
             
-            const response = await github.pulls.create({
+            const response = await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: 'Dependabot Combined PR',
@@ -246,7 +246,7 @@ runs:
             console.log('PULL REQUEST SUCCESSFULLY CREATED FOR BRANCH ' + combineBranchName);
 
             console.log('PULL REQUEST TITLE: Dependabot Combined PR');
-            // console.log('PULL REQUEST URL: ' + response['data']['html_url']);
+            console.log('PULL REQUEST URL: ' + response['data']['html_url']);
 
           } catch (error) {
               if (error.message.includes('A pull request already exists')) {
@@ -256,7 +256,7 @@ runs:
               }
           }
 
-    - uses: actions/github-script@v3
+    - uses: actions/github-script@v6
       # if: ${{ false }}
       id: label-conflict-prs
       name: Add Label To Merge Conflict Pull Requests
@@ -269,37 +269,28 @@ runs:
           let autoMergeConflictLabelExists = false;
 
           try {
-            const label = await github.issues.getLabel({
+            const label = await github.rest.issues.getLabel({
                             owner: context.repo.owner,
                             repo: context.repo.repo,
                             name: autoMergeConflictLabel
                           });
 
-            if (label['status'] != '200') {
-              createAutoMergeLabel = true;
-            } else {
+            if (label['status'] == '200') {
               autoMergeConflictLabelExists = true;
               console.log('LABEL ' + autoMergeConflictLabel + ' EXISTS');
+            } else {
+              createAutoMergeLabel = true;
             }
           } catch(getLabelError) {
             createAutoMergeLabel = true;
             console.log('FAILED TO GET LABEL ' + autoMergeConflictLabel + ' DUE TO ' + getLabelError.message);
-
-            /*
-            if (getLabelError.status == 404) {
-              console.log('FAILED TO GET LABEL ' + autoMergeConflictLabel + ' DUE TO ' + getLabelError.message);
-            }
-            else {
-              console.log('FAILED TO GET LABEL ' + autoMergeConflictLabel + ' DUE TO ' + getLabelError.message);
-            }
-            */
           }
 
           if (createAutoMergeLabel == true) {
             console.log('CREATING LABEL ' + autoMergeConflictLabel);
 
             try {
-              const response = await github.issues.createLabel({
+              const response = await github.rest.issues.createLabel({
                                 owner: context.repo.owner,
                                 repo: context.repo.repo,
                                 name: autoMergeConflictLabel,
