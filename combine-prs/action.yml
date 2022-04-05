@@ -231,7 +231,7 @@ runs:
       with:
         github-token: ${{ inputs.githubToken }}
         script: |
-          console.log('STEP =========================================================================== STEP');
+          console.log('START =========================================================================== STEP');
 
           prs = [];
           const closePrs = process.env.CLOSEPRS;
@@ -289,7 +289,7 @@ runs:
       with:
         github-token: ${{ inputs.githubToken }}
         script: |
-          console.log('STEP =========================================================================== STEP');
+          console.log('START =========================================================================== STEP');
 
           const mergeConlictPrs = process.env.MERGECONFLICTPRS;
           const autoMergeConflictLabel = 'automergeconflict';
@@ -375,7 +375,7 @@ runs:
       with:
         github-token: ${{ inputs.githubToken }}
         script: |
-          console.log('STEP =========================================================================== STEP');
+          console.log('START =========================================================================== STEP');
 
           const closeCombinedPrs = process.env.CLOSE_COMBINED_PRS;
 
