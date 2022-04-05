@@ -229,6 +229,8 @@ runs:
           console.log('HEAD: ' + combineBranchName);
           console.log('BASE: ' + '${{ steps.fetch-branch-names.outputs.base-branch }}');
           console.log('BODY: ' + body);
+          console.log('OWNER: ' + context.repo.owner);
+          console.log('REPO: ' + context.repo.repo);
 
           try {
             /*
