@@ -393,7 +393,7 @@ runs:
               console.log('ATTEMPTING TO CLOSE PULL REQUEST : ' + pr);
 
               try {
-                const closePRStatus = await github.pulls.update({
+                const closePRStatus = await github.rest.pulls.update({
                                         owner: context.repo.owner,
                                         repo: context.repo.repo,
                                         pull_number: pr,
