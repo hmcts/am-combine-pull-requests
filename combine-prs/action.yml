@@ -5,7 +5,7 @@ inputs:
   branchPrefix:
     description: "Branch prefix to find pull requests based on prefix"
     required: true
-    default: "dependabot"
+    default: "renovate"
 
   mustBeGreen:
     description: "Only combine pull requests that are green (status is success)"
@@ -43,7 +43,7 @@ runs:
     - name: Assign Environment Variables
       shell: bash
       env:
-        DEFAULT_BRANCH_PREFIX: 'dependabot'
+        DEFAULT_BRANCH_PREFIX: 'renovate'
         DEFAULT_MUST_BE_GREEN: 'true'
         DEFAULT_COMBINE_BRANCH_NAME: 'combine-prs-branch'
         DEFAULT_IGNORE_LABEL: 'nocombine'
